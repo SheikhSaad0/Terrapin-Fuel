@@ -25,13 +25,19 @@ interface ReviewSummary {
   disliked: string[]; // rating <= 4
 }
 
+interface GenerateOptions {
+  cuisinePreference?: string;
+  editInstruction?:  string;
+}
+
 export async function generateMealPlan(
   profile: Profile,
   menu: DailyMenu,
   diningHall: string,
   locationNum: number,
   date: string,
-  reviews: ReviewSummary
+  reviews: ReviewSummary,
+  options?: GenerateOptions
 ): Promise<MealPlan> {
   const { macros } = profile;
 
@@ -59,6 +65,14 @@ export async function generateMealPlan(
     reviews.disliked.length > 0 ? `AVOID (do not include): ${reviews.disliked.slice(0, 15).join(", ")}` : "",
   ].filter(Boolean).join("\n");
 
+  const cuisineNote = options?.cuisinePreference
+    ? `\n## Cuisine / Craving Preference\nThe student is in the mood for: "${options.cuisinePreference}". Prioritize items on the menu that best match this preference or cuisine style. If no close match exists, pick the nearest flavour profile.`
+    : "";
+
+  const editNote = options?.editInstruction
+    ? `\n## Required Changes (User-Requested Edit)\nThe student wants these specific modifications applied to this plan: "${options.editInstruction}". This takes priority over other preferences — honour it exactly.`
+    : "";
+
   const prompt = `You are a sports nutrition AI for UMD college students. Select items from today's REAL dining hall menu to build an optimal meal plan.
 
 ## Student Profile
@@ -72,6 +86,7 @@ ${filterNote}
 
 ## Past Ratings (personalization)
 ${reviewNote || "No rating history yet."}
+${cuisineNote}${editNote}
 
 ## Today's Menu at ${diningHall}
 ### BREAKFAST

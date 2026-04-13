@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import { MealPlan } from "@/types";
 import { ratingColor, ratingLabel, Spinner } from "./ui";
 
+const MEAL_META = {
+  breakfast: { icon: "🌅", label: "BREAKFAST", color: "#f59e0b" },
+  lunch:     { icon: "☀️", label: "LUNCH",     color: "#10b981" },
+  dinner:    { icon: "🌙", label: "DINNER",     color: "#6366f1" },
+} as const;
+
+type MealKey = keyof typeof MEAL_META;
+
 interface Props {
   profileId: string;
   plan?: MealPlan | null;
@@ -14,11 +22,13 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
   const [plan, setPlan]       = useState<MealPlan | null>(planProp ?? null);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [notes, setNotes]     = useState<Record<string, string>>({});
+  const [openMeals, setOpenMeals] = useState<Record<string, boolean>>({
+    breakfast: true, lunch: true, dinner: true,
+  });
   const [saved, setSaved]     = useState(false);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState("");
 
-  // If no plan was passed in, try sessionStorage (set when plan is generated)
   useEffect(() => {
     if (!planProp && profileId) {
       const cached = sessionStorage.getItem(`tf:plan:${profileId}`);
@@ -26,16 +36,17 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
     }
   }, [profileId, planProp]);
 
-  // Get all unique food items from today's plan
-  const allItems: string[] = plan
-    ? [
-        ...new Set(
-          ["breakfast", "lunch", "dinner"].flatMap((m) =>
-            (plan.meals[m as keyof typeof plan.meals]?.items ?? []).map((i) => i.name)
-          )
-        ),
-      ]
+  // Build grouped structure: per meal → list of item names
+  const mealGroups: { meal: MealKey; items: string[] }[] = plan
+    ? (["breakfast", "lunch", "dinner"] as MealKey[]).map((m) => ({
+        meal: m,
+        items: [...new Set((plan.meals[m]?.items ?? []).map((i) => i.name))],
+      })).filter((g) => g.items.length > 0)
     : [];
+
+  // Map food name → meal for saving
+  const itemMealMap: Record<string, string> = {};
+  mealGroups.forEach(({ meal, items }) => items.forEach((name) => { itemMealMap[name] = meal; }));
 
   const handleSave = async () => {
     setSaving(true); setError("");
@@ -44,6 +55,7 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
         foodName,
         rating,
         notes: notes[foodName] ?? "",
+        meal:  itemMealMap[foodName] ?? "other",
       }));
       if (reviews.length === 0) { setError("Rate at least one item first."); setSaving(false); return; }
 
@@ -62,7 +74,7 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
     setSaving(false);
   };
 
-  if (allItems.length === 0) {
+  if (mealGroups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="text-5xl">🍽️</div>
@@ -79,56 +91,86 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
       <div className="flex items-center gap-3 mb-2">
         <button onClick={onBack} className="btn-ghost px-3 py-2 text-sm">←</button>
         <div>
-          <h2 className="font-display text-2xl tracking-widest text-text-primary">RATE TODAY'S FOOD</h2>
+          <h2 className="font-display text-2xl tracking-wide text-text-primary">RATE TODAY'S FOOD</h2>
           <p className="text-xs text-text-muted">Your ratings personalize future meal plans</p>
         </div>
       </div>
 
-      {allItems.map((name) => {
-        const rating = ratings[name];
+      {mealGroups.map(({ meal, items }) => {
+        const { icon, label, color } = MEAL_META[meal];
+        const isOpen = openMeals[meal];
+        const ratedCount = items.filter((n) => ratings[n] != null).length;
+
         return (
-          <div key={name} className="card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm text-text-primary">{name}</span>
-              {rating != null && (
-                <span className="font-display text-lg" style={{ color: ratingColor(rating) }}>
-                  {rating}/10 · {ratingLabel(rating)}
+          <div key={meal}>
+            {/* Meal section header */}
+            <button
+              type="button"
+              onClick={() => setOpenMeals((o) => ({ ...o, [meal]: !o[meal] }))}
+              className="w-full flex items-center justify-between px-1 py-2 mb-2 cursor-pointer"
+              style={{ background: "transparent", border: "none" }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{icon}</span>
+                <span className="font-display text-base tracking-wide" style={{ color }}>{label}</span>
+                <span className="text-xs text-text-muted">
+                  {ratedCount}/{items.length} rated
                 </span>
-              )}
-            </div>
+              </div>
+              <span
+                className="text-text-muted text-xs transition-transform duration-200"
+                style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0)", display: "inline-block" }}
+              >▼</span>
+            </button>
 
-            {/* Rating buttons 1–10 */}
-            <div className="grid grid-cols-10 gap-1">
-              {[1,2,3,4,5,6,7,8,9,10].map((n) => {
-                const selected = rating === n;
-                const col = ratingColor(n);
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setRatings((r) => ({ ...r, [name]: n }))}
-                    className="py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    style={{
-                      background: selected ? col : "var(--surface-2)",
-                      color: selected ? "#fff" : "var(--text-muted)",
-                      border: `1px solid ${selected ? col : "var(--surface-3)"}`,
-                    }}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
+            {isOpen && items.map((name) => {
+              const rating = ratings[name];
+              return (
+                <div key={name} className="card p-4 space-y-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm text-text-primary">{name}</span>
+                    {rating != null && (
+                      <span className="font-display text-base" style={{ color: ratingColor(rating) }}>
+                        {rating}/10 · {ratingLabel(rating)}
+                      </span>
+                    )}
+                  </div>
 
-            {/* Optional notes */}
-            {rating != null && (
-              <input
-                className="input text-xs"
-                placeholder="Notes (optional)..."
-                value={notes[name] ?? ""}
-                onChange={(e) => setNotes((n) => ({ ...n, [name]: e.target.value }))}
-              />
-            )}
+                  {/* Rating buttons 1–10 */}
+                  <div className="grid grid-cols-10 gap-1">
+                    {[1,2,3,4,5,6,7,8,9,10].map((n) => {
+                      const selected = rating === n;
+                      const col = ratingColor(n);
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setRatings((r) => ({ ...r, [name]: n }))}
+                          className="py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                          style={{
+                            background: selected ? col : "var(--surface-2)",
+                            color:      selected ? "#fff" : "var(--text-muted)",
+                            border:     `1px solid ${selected ? col : "var(--surface-3)"}`,
+                          }}
+                        >
+                          {n}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Optional notes */}
+                  {rating != null && (
+                    <input
+                      className="input text-xs"
+                      placeholder="Notes (optional)..."
+                      value={notes[name] ?? ""}
+                      onChange={(e) => setNotes((n) => ({ ...n, [name]: e.target.value }))}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       })}
@@ -139,7 +181,7 @@ export function ReviewPanel({ profileId, plan: planProp, onBack }: Props) {
         onClick={handleSave}
         disabled={saving || saved}
         className="btn-primary w-full"
-        style={saved ? { background: "#10b981", boxShadow: "0 4px 20px #10b98144" } : {}}
+        style={saved ? { background: "#10b981", boxShadow: "0 4px 20px #10b98144", animation: "none" } : {}}
       >
         {saved ? "✓ RATINGS SAVED!" : saving
           ? <span className="flex items-center justify-center gap-2"><Spinner size={18} /> SAVING...</span>

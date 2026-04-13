@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -33,6 +33,13 @@
 
 html, body {
   background: var(--surface-0);
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(204,0,51,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(255,210,0,0.03) 0%, transparent 55%),
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: 'DM Sans', system-ui, sans-serif;
   min-height: 100vh;
@@ -53,7 +60,7 @@ html, body {
 }
 
 /* ─── Utility classes ─────────────────────────────────────────────────────── */
-.font-display { font-family: 'Bebas Neue', cursive; }
+.font-display { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
 
 .card {
   background: var(--surface-1);
@@ -62,11 +69,21 @@ html, body {
 }
 
 .card-hover {
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .card-hover:hover {
   border-color: var(--surface-4);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--surface-4)60;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px var(--umd-red-glow);
+  }
+  50% {
+    box-shadow: 0 6px 36px var(--umd-red-glow), 0 0 18px 3px var(--umd-red-glow);
+  }
 }
 
 .btn-primary {
@@ -75,19 +92,22 @@ html, body {
   border: none;
   border-radius: 10px;
   padding: 14px 24px;
-  font-family: 'Bebas Neue', cursive;
-  font-size: 18px;
-  letter-spacing: 3px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.2s;
   box-shadow: 0 4px 20px var(--umd-red-glow);
 }
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.92;
-  box-shadow: 0 6px 28px var(--umd-red-glow);
+  animation: glow-pulse 1.6s ease-in-out infinite;
   transform: translateY(-1px);
 }
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  animation: none;
+}
 .btn-primary:disabled {
   background: var(--surface-2);
   color: var(--text-muted);
@@ -105,9 +125,13 @@ html, body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
-.btn-ghost:hover { border-color: var(--surface-4); color: var(--text-primary); }
+.btn-ghost:hover {
+  border-color: var(--umd-red);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px var(--umd-red)25, inset 0 0 14px var(--umd-red)06;
+}
 
 .input {
   background: var(--surface-2);
@@ -132,6 +156,12 @@ html, body {
   letter-spacing: 1px;
   text-transform: uppercase;
   margin-bottom: 6px;
+}
+
+/* ─── Header gradient bar ─────────────────────────────────────────────────── */
+.header-gradient-bar {
+  height: 2px;
+  background: linear-gradient(90deg, var(--umd-red), var(--umd-gold) 60%, transparent);
 }
 
 /* ─── Animations ──────────────────────────────────────────────────────────── */
@@ -167,3 +197,7 @@ html, body {
 .rating-great  { color: #10b981; }
 .rating-ok     { color: #f59e0b; }
 .rating-bad    { color: var(--umd-red); }
+
+/* ─── No scrollbar utility ────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

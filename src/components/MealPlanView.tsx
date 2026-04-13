@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MealPlan } from "@/types";
-import { MacroBadge, MacroBar } from "./ui";
+import { MacroBadge, MacroBar, Spinner } from "./ui";
 
 const MEAL_META = {
   breakfast: { icon: "🌅", label: "BREAKFAST", color: "#f59e0b" },
@@ -13,20 +13,58 @@ const MEAL_META = {
 type MealKey = keyof typeof MEAL_META;
 
 interface Props {
-  plan: MealPlan;
-  targetCalories: number;
-  targetProtein: number;
-  targetCarbs: number | null;
-  targetFat: number | null;
-  onReview: () => void;
+  plan:            MealPlan;
+  profileId:       string;
+  locationNum:     number;
+  diningHall:      string;
+  targetCalories:  number;
+  targetProtein:   number;
+  targetCarbs:     number | null;
+  targetFat:       number | null;
+  onReview:        () => void;
+  onPlanUpdated:   (plan: MealPlan) => void;
 }
 
-export function MealPlanView({ plan, targetCalories, targetProtein, targetCarbs, targetFat, onReview }: Props) {
+export function MealPlanView({
+  plan, profileId, locationNum, diningHall,
+  targetCalories, targetProtein, targetCarbs, targetFat,
+  onReview, onPlanUpdated,
+}: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     breakfast: true, lunch: false, dinner: false,
   });
+  const [editInstruction, setEditInstruction] = useState("");
+  const [editLoading, setEditLoading]         = useState(false);
+  const [editError, setEditError]             = useState("");
 
   const toggle = (meal: string) => setExpanded((e) => ({ ...e, [meal]: !e[meal] }));
+
+  const handleRemake = async () => {
+    if (!editInstruction.trim()) return;
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId,
+          locationNum,
+          diningHall,
+          date:            plan.date,
+          regenerate:      true,
+          editInstruction: editInstruction.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      onPlanUpdated(json.data as MealPlan);
+      setEditInstruction("");
+    } catch (e) {
+      setEditError(String(e));
+    }
+    setEditLoading(false);
+  };
 
   const { dailyTotals } = plan;
 
@@ -41,7 +79,7 @@ export function MealPlanView({ plan, targetCalories, targetProtein, targetCarbs,
 
       {/* Macro progress */}
       <div className="card p-4">
-        <h3 className="font-display text-lg tracking-widest text-text-primary mb-4">TODAY'S TARGETS</h3>
+        <h3 className="font-display text-lg tracking-wide text-text-primary mb-4">TODAY'S TARGETS</h3>
         <MacroBar label="🔥 Calories" current={dailyTotals.calories} target={targetCalories} type="cal" />
         <MacroBar label="💪 Protein"  current={dailyTotals.protein}  target={targetProtein}  type="protein" />
         {targetCarbs != null && (
@@ -74,12 +112,12 @@ export function MealPlanView({ plan, targetCalories, targetProtein, targetCarbs,
               type="button"
               onClick={() => toggle(meal)}
               className="w-full flex items-center justify-between p-4 cursor-pointer"
-              style={{ background: "transparent" }}
+              style={{ background: "transparent", border: "none" }}
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{icon}</span>
                 <div className="text-left">
-                  <div className="font-display text-lg tracking-widest" style={{ color }}>
+                  <div className="font-display text-lg tracking-wide" style={{ color }}>
                     {label}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -91,7 +129,7 @@ export function MealPlanView({ plan, targetCalories, targetProtein, targetCarbs,
                 </div>
               </div>
               <span className="text-text-muted text-sm transition-transform duration-200"
-                style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}>▼</span>
+                style={{ transform: open ? "rotate(180deg)" : "rotate(0)", display: "inline-block" }}>▼</span>
             </button>
 
             {/* Items */}
@@ -137,14 +175,39 @@ export function MealPlanView({ plan, targetCalories, targetProtein, targetCarbs,
         );
       })}
 
+      {/* Edit meal plan */}
+      <div className="card p-4 space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
+          ✏️ Edit This Plan
+        </p>
+        <input
+          className="input text-sm"
+          placeholder='e.g. "no boiled eggs", "more protein at breakfast", "no chicken"'
+          value={editInstruction}
+          onChange={(e) => setEditInstruction(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleRemake()}
+        />
+        {editError && <p className="text-xs" style={{ color: "var(--umd-red)" }}>{editError}</p>}
+        <button
+          onClick={handleRemake}
+          disabled={!editInstruction.trim() || editLoading}
+          className="btn-ghost w-full text-sm"
+        >
+          {editLoading
+            ? <span className="flex items-center justify-center gap-1.5"><Spinner size={14} /> Remaking plan...</span>
+            : "🔄 Remake with AI"}
+        </button>
+      </div>
+
       {/* Rate food CTA */}
       <button
         onClick={onReview}
-        className="w-full py-3.5 rounded-xl border-2 font-display text-lg tracking-widest transition-all cursor-pointer"
+        className="w-full py-3.5 rounded-xl border-2 font-display text-lg tracking-wide transition-all cursor-pointer"
         style={{
           borderColor: "var(--umd-red)",
-          color: "var(--umd-red)",
-          background: "transparent",
+          color:       "var(--umd-red)",
+          background:  "transparent",
+          fontFamily:  "'Space Grotesk', sans-serif",
         }}
       >
         ⭐ RATE TODAY'S FOOD

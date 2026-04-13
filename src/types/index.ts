@@ -45,6 +45,39 @@ export const DIETARY_PREF_OPTIONS: { id: DietaryTag; label: string; emoji: strin
   { id: "fish",       label: "Fish-Free",        emoji: "🐟"  },
 ];
 
+// ─── Dietary Tag Display Helpers ──────────────────────────────────────────────
+export const TAG_ABBREV: Record<DietaryTag, string> = {
+  vegetarian:      "V",
+  vegan:           "VG",
+  halal:           "HF",
+  gluten:          "GF",
+  dairy:           "DF",
+  eggs:            "EF",
+  nuts:            "NF",
+  shellfish:       "SF",
+  soy:             "SY",
+  fish:            "FF",
+  sesame:          "SE",
+  "locally-grown": "LG",
+  "smart-choice":  "SC",
+};
+
+export const TAG_COLORS: Record<DietaryTag, string> = {
+  vegetarian:      "#10b981",
+  vegan:           "#059669",
+  halal:           "#6366f1",
+  gluten:          "#f59e0b",
+  dairy:           "#06b6d4",
+  eggs:            "#f97316",
+  nuts:            "#a16207",
+  shellfish:       "#0891b2",
+  soy:             "#7c3aed",
+  fish:            "#2563eb",
+  sesame:          "#9a3412",
+  "locally-grown": "#15803d",
+  "smart-choice":  "#0d9488",
+};
+
 // ─── Menu Item ────────────────────────────────────────────────────────────────
 export interface MenuItem {
   name:         string;
@@ -81,6 +114,11 @@ export interface MacroTargets {
   fat:      number | null;  // optional — null means "not tracking"
 }
 
+export interface WeightEntry {
+  date:   string; // YYYY-MM-DD
+  weight: number; // lbs
+}
+
 export interface Profile {
   id:             string;
   name:           string;
@@ -96,6 +134,7 @@ export interface Profile {
   otherPrefs:     string;
   supplements:    Supplement[];
   macros:         MacroTargets;
+  weightLog:      WeightEntry[];
   createdAt:      string;
 }
 
@@ -134,7 +173,16 @@ export interface Review {
   rating:    number;
   notes:     string;
   date:      string;
+  meal:      "breakfast" | "lunch" | "dinner" | "other";
   createdAt: string;
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+export interface HistoryEntry {
+  date:        string;
+  mealPlan:    MealPlan | null;
+  reviews:     Review[];
+  dailyTotals: MacroTargets | null;
 }
 
 // ─── API Response Wrapper ─────────────────────────────────────────────────────
