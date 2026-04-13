@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+:root {
+  --umd-red:       #CC0033;
+  --umd-red-dark:  #8a0020;
+  --umd-red-glow:  #CC003340;
+  --umd-gold:      #FFD200;
+  --umd-gold-dim:  #b39800;
+  --surface-0:     #070707;
+  --surface-1:     #0f0f0f;
+  --surface-2:     #161616;
+  --surface-3:     #1e1e1e;
+  --surface-4:     #272727;
+  --text-primary:  #f0f0f0;
+  --text-secondary:#a0a0a0;
+  --text-muted:    #555555;
+  --macro-cal:     #FFD200;
+  --macro-protein: #CC0033;
+  --macro-carbs:   #10b981;
+  --macro-fat:     #8b5cf6;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--surface-1); }
+::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--umd-red); }
+
+/* ─── Focus ring ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--umd-red);
+  outline-offset: 2px;
+}
+
+/* ─── Utility classes ─────────────────────────────────────────────────────── */
+.font-display { font-family: 'Bebas Neue', cursive; }
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  border-radius: 14px;
+}
+
+.card-hover {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card-hover:hover {
+  border-color: var(--surface-4);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--umd-red), #ff1a4a);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 18px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 4px 20px var(--umd-red-glow);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 6px 28px var(--umd-red-glow);
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1.5px solid var(--surface-3);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-ghost:hover { border-color: var(--surface-4); color: var(--text-primary); }
+
+.input {
+  background: var(--surface-2);
+  border: 1.5px solid var(--surface-3);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  width: 100%;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.input::placeholder { color: var(--text-muted); }
+.input:focus { border-color: var(--umd-red); }
+
+.label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 var(--umd-red-glow); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-slide-up { animation: slideUp 0.4s ease forwards; }
+.animate-spin-slow { animation: spin 1s linear infinite; }
+
+/* Staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ─── Rating color classes ────────────────────────────────────────────────── */
+.rating-great  { color: #10b981; }
+.rating-ok     { color: #f59e0b; }
+.rating-bad    { color: var(--umd-red); }
