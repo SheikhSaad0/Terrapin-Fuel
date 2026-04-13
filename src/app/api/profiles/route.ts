@@ -24,6 +24,7 @@ function rowToProfile(row: Record<string, unknown>) {
       carbs:    row.target_carbs ?? null,
       fat:      row.target_fat   ?? null,
     },
+    weightLog: Array.isArray(row.weight_log) ? row.weight_log : [],
     createdAt: row.created_at,
   };
 }
@@ -46,14 +47,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       name, avatarColor, heightFt, heightIn, weightLbs, age, sex,
-      goal, activity, dietaryPrefs, otherPrefs, supplements, macros,
+      goal, activity, dietaryPrefs, otherPrefs, supplements, macros, weightLog,
     } = body;
 
-    // Neon needs PostgreSQL arrays passed as actual JS arrays,
-    // and JSONB as a JSON string cast explicitly.
     const prefsArray: string[]  = dietaryPrefs ?? [];
     const suppString: string    = JSON.stringify(supplements ?? []);
-    const suppJson              = JSON.parse(suppString); // pass as object; neon serializes to jsonb
+    const suppJson              = JSON.parse(suppString);
+    const weightLogJson         = JSON.parse(JSON.stringify(weightLog ?? []));
 
     const rows = await sql`
       INSERT INTO profiles (
@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
         height_ft, height_in, weight_lbs, age, sex,
         goal, activity,
         dietary_prefs, other_prefs, supplements,
-        target_calories, target_protein, target_carbs, target_fat
+        target_calories, target_protein, target_carbs, target_fat,
+        weight_log
       ) VALUES (
         ${name ?? ""},
         ${avatarColor ?? "#CC0033"},
@@ -78,7 +79,8 @@ export async function POST(req: NextRequest) {
         ${macros?.calories ?? null},
         ${macros?.protein  ?? null},
         ${macros?.carbs    ?? null},
-        ${macros?.fat      ?? null}
+        ${macros?.fat      ?? null},
+        ${weightLogJson}
       )
       RETURNING *
     `;
@@ -100,11 +102,12 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const {
       name, avatarColor, heightFt, heightIn, weightLbs, age, sex,
-      goal, activity, dietaryPrefs, otherPrefs, supplements, macros,
+      goal, activity, dietaryPrefs, otherPrefs, supplements, macros, weightLog,
     } = body;
 
-    const suppJson = supplements != null ? JSON.parse(JSON.stringify(supplements)) : null;
+    const suppJson       = supplements != null ? JSON.parse(JSON.stringify(supplements)) : null;
     const prefsArray: string[] | null = dietaryPrefs ?? null;
+    const weightLogJson  = weightLog != null ? JSON.parse(JSON.stringify(weightLog)) : null;
 
     const rows = await sql`
       UPDATE profiles SET
@@ -123,7 +126,8 @@ export async function PATCH(req: NextRequest) {
         target_calories = COALESCE(${macros?.calories ?? null}, target_calories),
         target_protein  = COALESCE(${macros?.protein  ?? null}, target_protein),
         target_carbs    = ${macros != null ? (macros.carbs ?? null) : null},
-        target_fat      = ${macros != null ? (macros.fat  ?? null) : null}
+        target_fat      = ${macros != null ? (macros.fat  ?? null) : null},
+        weight_log      = COALESCE(${weightLogJson}, weight_log)
       WHERE id = ${id}
       RETURNING *
     `;

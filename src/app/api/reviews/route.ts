@@ -6,7 +6,7 @@ import { sql } from "@/lib/db";
  * Returns all reviews for a profile, with avg rating per food item.
  *
  * POST /api/reviews
- * Body: { profileId, reviews: [{ foodName, rating, notes? }] }
+ * Body: { profileId, reviews: [{ foodName, rating, notes?, meal? }] }
  * Upserts ratings (one per food per day).
  *
  * DELETE /api/reviews?profileId=xxx&foodName=yyy
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     `;
 
     const recent = await sql`
-      SELECT id, food_name, rating, notes, date, created_at
+      SELECT id, food_name, rating, notes, date::text, meal, created_at
       FROM reviews
       WHERE profile_id = ${profileId}
       ORDER BY date DESC, created_at DESC
@@ -54,15 +54,15 @@ export async function POST(req: NextRequest) {
 
     const today = new Date().toISOString().split("T")[0];
 
-    // Upsert each review individually
     for (const r of reviews) {
-      const { foodName, rating, notes } = r;
+      const { foodName, rating, notes, meal } = r;
       if (!foodName || rating == null) continue;
+      const mealVal = meal ?? "other";
       await sql`
-        INSERT INTO reviews (profile_id, food_name, rating, notes, date)
-        VALUES (${profileId}, ${foodName}, ${rating}, ${notes ?? ""}, ${today}::date)
+        INSERT INTO reviews (profile_id, food_name, rating, notes, date, meal)
+        VALUES (${profileId}, ${foodName}, ${rating}, ${notes ?? ""}, ${today}::date, ${mealVal})
         ON CONFLICT (profile_id, food_name, date)
-        DO UPDATE SET rating = EXCLUDED.rating, notes = EXCLUDED.notes
+        DO UPDATE SET rating = EXCLUDED.rating, notes = EXCLUDED.notes, meal = EXCLUDED.meal
       `;
     }
 
@@ -81,7 +81,6 @@ export async function DELETE(req: NextRequest) {
     if (foodName) {
       await sql`DELETE FROM reviews WHERE profile_id = ${profileId} AND food_name = ${foodName}`;
     } else {
-      // Delete all reviews for profile (used in "reset" scenarios)
       await sql`DELETE FROM reviews WHERE profile_id = ${profileId}`;
     }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { generateMealPlan, aiCalculateMacros } from "@/lib/ai";
 import { calculateMacros } from "@/lib/macros";
-import { Profile, DailyMenu, DietaryTag, Supplement } from "@/types";
+import { Profile, DailyMenu, DietaryTag, Supplement, WeightEntry } from "@/types";
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -18,10 +18,8 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     sex:          row.sex as "male" | "female",
     goal:         row.goal as "bulk" | "maintain" | "cut",
     activity:     row.activity as "sedentary" | "light" | "moderate" | "active",
-    // Cast string[] from DB → DietaryTag[] (values are always valid DietaryTag strings)
     dietaryPrefs: ((row.dietary_prefs ?? []) as string[]) as DietaryTag[],
     otherPrefs:   (row.other_prefs as string) ?? "",
-    // Ensure supplements is always an array (JSONB can come back as object or null)
     supplements:  Array.isArray(row.supplements)
                     ? (row.supplements as Supplement[])
                     : [],
@@ -31,17 +29,23 @@ function rowToProfile(row: Record<string, unknown>): Profile {
       carbs:    (row.target_carbs   as number | null) ?? null,
       fat:      (row.target_fat     as number | null) ?? null,
     },
+    weightLog: Array.isArray(row.weight_log)
+                 ? (row.weight_log as WeightEntry[])
+                 : [],
     createdAt: row.created_at as string,
   };
 }
 
 /**
  * POST /api/plan
- * Body: { profileId, locationNum, diningHall, date?, regenerate? }
+ * Body: { profileId, locationNum, diningHall, date?, regenerate?, cuisinePreference?, editInstruction? }
  */
 export async function POST(req: NextRequest) {
   try {
-    const { profileId, locationNum, diningHall, date, regenerate } = await req.json();
+    const {
+      profileId, locationNum, diningHall, date, regenerate,
+      cuisinePreference, editInstruction,
+    } = await req.json();
     const today = date ?? new Date().toISOString().split("T")[0];
 
     // Load profile
@@ -91,7 +95,10 @@ export async function POST(req: NextRequest) {
     };
 
     // Generate AI plan
-    const plan = await generateMealPlan(profile, menu, diningHall, locationNum, today, reviews);
+    const plan = await generateMealPlan(
+      profile, menu, diningHall, locationNum, today, reviews,
+      { cuisinePreference, editInstruction }
+    );
 
     // Save to DB
     await sql`

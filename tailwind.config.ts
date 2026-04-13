@@ -32,7 +32,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["'Bebas Neue'", "cursive"],
+        display: ["'Space Grotesk'", "sans-serif"],
         sans: ["'DM Sans'", "system-ui", "sans-serif"],
       },
       animation: {

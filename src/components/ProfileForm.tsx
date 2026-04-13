@@ -196,6 +196,7 @@ export function ProfileForm({
         otherPrefs: form.otherPrefs,
         supplements: form.supplements,
         macros,
+        weightLog: [],
       });
     } catch (e) {
       setError(String(e));
