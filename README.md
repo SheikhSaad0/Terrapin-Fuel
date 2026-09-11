@@ -1,11 +1,7 @@
 # Terrapin Fuel
 
 > AI-powered UMD dining hall meal planner for fitness goals — built for Terps.
-
-**Eat smart. Train harder.**
-
----
-
+> 
 ## What it does
 
 - Scrapes the **real daily UMD dining hall menu** (South Campus, 251 North, Yahentamitsi)
