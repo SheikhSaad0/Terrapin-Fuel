@@ -1,4 +1,4 @@
-# 🐢 Terrapin Fuel
+# Terrapin Fuel
 
 > AI-powered UMD dining hall meal planner for fitness goals — built for Terps.
 
