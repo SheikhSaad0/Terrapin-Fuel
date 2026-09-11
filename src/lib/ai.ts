@@ -173,7 +173,7 @@ Return ONLY this JSON (no fences):
 {"calories":0,"protein":0,"carbs":0,"fat":0,"explanation":"2 sentences"}`;
 
   const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-5",
     max_tokens: 400,
     messages: [{ role: "user", content: prompt }],
   });
